@@ -8,22 +8,22 @@ import java.util.List;
 
 /**
  * Test of the lazy version of Eppstein's algorithm for computing the K shortest paths between two nodes in a graph.
- *
+ * <p/>
  * Copyright (C) 2015  Brandon Smock (dr.brandon.smock@gmail.com, GitHub: bsmock)
- *
+ * <p/>
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p/>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p/>
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * <p/>
  * Created by Brandon Smock on October 7, 2015.
  * Last updated by Brandon Smock on December 24, 2015.
  */
@@ -52,7 +52,7 @@ public class TestLazyEppstein {
         targetNode = "7239";
         K = 1000;
 
-        usageExample1(graphFilename,sourceNode,targetNode,K);
+        usageExample1(graphFilename, sourceNode, targetNode, K);
     }
 
     public static void usageExample1(String graphFilename, String source, String target, int k) {

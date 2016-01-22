@@ -2,7 +2,7 @@ package edu.ufl.cise.bsmock.graph;
 
 /**
  * The Graph class implements a weighted, directed graph using an adjacency list representation.
- *
+ * <p/>
  * Created by brandonsmock on 6/1/15.
  */
 
@@ -10,10 +10,10 @@ import java.io.*;
 import java.util.*;
 
 public class Graph {
-    private HashMap<String,Node> nodes;
+    private HashMap<String, Node> nodes;
 
     public Graph() {
-        nodes = new HashMap<String,Node>();
+        nodes = new HashMap<String, Node>();
     }
 
     public Graph(String filename) {
@@ -21,7 +21,7 @@ public class Graph {
         readFromFile(filename);
     }
 
-    public Graph(HashMap<String,Node> nodes) {
+    public Graph(HashMap<String, Node> nodes) {
         this.nodes = nodes;
     }
 
@@ -39,13 +39,13 @@ public class Graph {
 
     public void addNode(String label) {
         if (!nodes.containsKey(label))
-            nodes.put(label,new Node(label));
+            nodes.put(label, new Node(label));
     }
 
     public void addNode(Node node) {
         String label = node.getLabel();
         if (!nodes.containsKey(label))
-            nodes.put(label,node);
+            nodes.put(label, node);
     }
 
     public void addEdge(String label1, String label2, Double weight) {
@@ -53,11 +53,11 @@ public class Graph {
             addNode(label1);
         if (!nodes.containsKey(label2))
             addNode(label2);
-        nodes.get(label1).addEdge(label2,weight);
+        nodes.get(label1).addEdge(label2, weight);
     }
 
     public void addEdge(Edge edge) {
-        addEdge(edge.getFromNode(),edge.getToNode(),edge.getWeight());
+        addEdge(edge.getFromNode(), edge.getToNode(), edge.getWeight());
     }
 
     public void addEdges(List<Edge> edges) {
@@ -88,7 +88,7 @@ public class Graph {
         return Double.MAX_VALUE;
     }
 
-    public HashMap<String,Node> getNodes() {
+    public HashMap<String, Node> getNodes() {
         return nodes;
     }
 
@@ -126,21 +126,20 @@ public class Graph {
         for (Node node : nodes.values()) {
             if (node.getAdjacencyList().contains(label)) {
                 double weight = node.removeEdge(label);
-                edges.add(new Edge(node.getLabel(),label,weight));
+                edges.add(new Edge(node.getLabel(), label, weight));
             }
         }
         return edges;
     }
 
 
-
     public Graph transpose() {
-        HashMap<String,Node> newNodes = new HashMap<String, Node>();
+        HashMap<String, Node> newNodes = new HashMap<String, Node>();
 
         Iterator<String> it = nodes.keySet().iterator();
         while (it.hasNext()) {
             String nodeLabel = it.next();
-            newNodes.put(nodeLabel,new Node(nodeLabel));
+            newNodes.put(nodeLabel, new Node(nodeLabel));
         }
 
         it = nodes.keySet().iterator();
@@ -152,7 +151,7 @@ public class Graph {
             HashMap<String, Double> neighbors = node.getNeighbors();
             while (alIt.hasNext()) {
                 String neighborLabel = alIt.next();
-                newNodes.get(neighborLabel).addEdge(nodeLabel,neighbors.get(neighborLabel));
+                newNodes.get(neighborLabel).addEdge(nodeLabel, neighbors.get(neighborLabel));
             }
         }
 
@@ -160,7 +159,7 @@ public class Graph {
     }
 
     public void clear() {
-        nodes = new HashMap<String,Node>();
+        nodes = new HashMap<String, Node>();
     }
 
     public void readFromFile(String fileName) {
@@ -172,7 +171,7 @@ public class Graph {
             while (line != null) {
                 String[] edgeDescription = line.split("\\s");
                 if (edgeDescription.length == 3) {
-                    addEdge(edgeDescription[0],edgeDescription[1],Double.parseDouble(edgeDescription[2]));
+                    addEdge(edgeDescription[0], edgeDescription[1], Double.parseDouble(edgeDescription[2]));
                     //addEdge(edgeDescription[1],edgeDescription[0],Double.parseDouble(edgeDescription[2]));
                 }
                 line = in.readLine();
@@ -224,7 +223,7 @@ public class Graph {
                 Node node = it.next();
                 String nodeLabel = node.getLabel();
                 if (nodes.containsKey(nodeLabel)) {
-                    HashMap<String,Double> neighbors = node.getNeighbors();
+                    HashMap<String, Double> neighbors = node.getNeighbors();
                     Iterator<String> it2 = neighbors.keySet().iterator();
                     while (it2.hasNext()) {
                         String nodeLabel2 = it2.next();

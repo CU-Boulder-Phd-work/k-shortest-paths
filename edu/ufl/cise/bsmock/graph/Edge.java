@@ -2,7 +2,7 @@ package edu.ufl.cise.bsmock.graph;
 
 /**
  * The Edge class implements standard properties and methods for a weighted edge in a directed graph.
- *
+ * <p/>
  * Created by Brandon Smock on 6/19/15.
  */
 public class Edge implements Cloneable {
@@ -64,16 +64,12 @@ public class Edge implements Cloneable {
     }
 
     public boolean equals(Edge edge2) {
-        if (hasSameEndpoints(edge2) && weight == edge2.getWeight())
-            return true;
+        return hasSameEndpoints(edge2) && weight == edge2.getWeight();
 
-        return false;
     }
 
     public boolean hasSameEndpoints(Edge edge2) {
-        if (fromNode.equals(edge2.getFromNode()) && toNode.equals(edge2.getToNode()))
-            return true;
+        return fromNode.equals(edge2.getFromNode()) && toNode.equals(edge2.getToNode());
 
-        return false;
     }
 }

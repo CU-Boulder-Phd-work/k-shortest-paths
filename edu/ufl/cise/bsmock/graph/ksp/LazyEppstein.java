@@ -1,41 +1,101 @@
 package edu.ufl.cise.bsmock.graph.ksp;
 
-import edu.ufl.cise.bsmock.graph.*;
-import edu.ufl.cise.bsmock.graph.util.*;
-import java.util.*;
+import edu.ufl.cise.bsmock.graph.Edge;
+import edu.ufl.cise.bsmock.graph.Graph;
+import edu.ufl.cise.bsmock.graph.util.Dijkstra;
+import edu.ufl.cise.bsmock.graph.util.Path;
+import edu.ufl.cise.bsmock.graph.util.ShortestPathTree;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.PriorityQueue;
 
 /**
  * Lazy version of Eppstein's algorithm (by Jimenez and Marzal) for computing the K shortest paths
  * between two nodes in a graph.
- *
+ * <p/>
  * Copyright (C) 2015  Brandon Smock (dr.brandon.smock@gmail.com, GitHub: bsmock)
- *
+ * <p/>
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- *
+ * <p/>
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
+ * <p/>
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * <p/>
  * Created by Brandon Smock on October 5, 2015.
  * Last updated by Brandon Smock on December 24, 2015.
  */
 public final class LazyEppstein extends Eppstein implements KSPAlgorithm {
 
-    public LazyEppstein() {};
+    public LazyEppstein() {
+    }
+
+    /**
+     * Build H_out(v) and H_T(v) for node v, and recursively build H_T(nextT(v)) if it does not exist.
+     *
+     * @param nodeLabel            node v
+     * @param graph                the graph, G, on which to compute the K shortest paths from s to t
+     * @param sidetrackEdgeCostMap the cost of each sidetrack edge in G
+     * @param nodeHeaps            an index/hash table of heap H_out(v), for each node v in the graph
+     * @param edgeHeaps            an index/hash table of heaps H_out(v), but indexed by sidetrack edge
+     * @param outrootHeaps         an index of heaps H_T(v) for each node v
+     * @param arrayHeaps           an index of the array representation of heaps H_T(v) for each node v, as they are
+     *                             being built
+     * @param tree                 the shortest path tree, T, rooted at the target node, t
+     */
+    private static void buildHeap(String nodeLabel, Graph graph, HashMap<String, Double> sidetrackEdgeCostMap, HashMap<String, EppsteinHeap> nodeHeaps, HashMap<String, EppsteinHeap> edgeHeaps, HashMap<String, EppsteinHeap> outrootHeaps, HashMap<String, EppsteinArrayHeap> arrayHeaps, ShortestPathTree tree) {
+        /* Part 1: Compute sub-heap H_out(v). */
+        computeOutHeap(nodeLabel, graph, sidetrackEdgeCostMap, nodeHeaps, edgeHeaps);
+
+        /* PART 2: Compute sub-heap H_T(v) */
+
+        /* Need to get H_T(nextT(v)) before H_T(v) can be built. If H_T(nextT(v)) has not been built, build it. */
+        EppsteinArrayHeap currentArrayHeap;
+        if (nodeLabel.equals(tree.getRoot())) {
+            // Case 0 (recursive base case): v = the target node, t, so there is no H_T(nextT(v))
+            currentArrayHeap = new EppsteinArrayHeap();
+        } else {
+            if (!outrootHeaps.containsKey(tree.getParentOf(nodeLabel))) {
+                // Case 1: H_T(nextT(v)) has not been built, so build it
+                buildHeap(tree.getParentOf(nodeLabel), graph, sidetrackEdgeCostMap, nodeHeaps, edgeHeaps, outrootHeaps, arrayHeaps, tree);
+            }
+            // Case 2: H_T(nextT(v)) has been built
+            currentArrayHeap = arrayHeaps.get(tree.getParentOf(nodeLabel));
+        }
+
+        /* Create H_T(v) from H_T(nextT(v) */
+        EppsteinHeap sidetrackHeap = nodeHeaps.get(nodeLabel);
+        if (sidetrackHeap != null) {
+            currentArrayHeap = currentArrayHeap.clone();
+            currentArrayHeap.addOutroot(sidetrackHeap);
+        }
+
+        // Index the array representation of H_T(v), which is in a modifiable form and is used only by buildHeap() to
+        // create further H_T heaps for which the current heap is a dependency.
+        arrayHeaps.put(nodeLabel, currentArrayHeap);
+
+        // Index the static, pointer representation of H_T(v), which is traversed by Eppstein's algorithm to add
+        // candidate paths to the priority queue.
+        EppsteinHeap currentHeap = currentArrayHeap.toEppsteinHeap2();
+        if (currentHeap != null) {
+            outrootHeaps.put(nodeLabel, currentHeap);
+        }
+    }
 
     /**
      * Computes the K shortest paths (allowing cycles) in a graph from node s to node t in graph G using the lazy
      * version of Eppstein's algorithm. ("A lazy version of Eppstein's K shortest paths algorithm", Jimenez & Marzal)
-     *
+     * <p/>
      * See Eppstein.java for explanatory notes about Eppstein's algorithm.
-     *
+     * <p/>
      * Some explanatory notes about how lazy Eppstein's algorithm works, given Eppstein's algorithm:
      * - Main idea: Instead of building the entire Eppstein heap before finding any of the K shortest paths, build the
      * heap as it is traversed, meaning build it as candidate paths are pulled from the priority queue.
@@ -77,14 +137,14 @@ public final class LazyEppstein extends Eppstein implements KSPAlgorithm {
         }
 
         // Compute the set of sidetrack edge costs
-        HashMap<String,Double> sidetrackEdgeCostMap = computeSidetrackEdgeCosts(graph, tree);
+        HashMap<String, Double> sidetrackEdgeCostMap = computeSidetrackEdgeCosts(graph, tree);
 
         /* Make indexes to give (fast) access to these heaps later */
         // Heap H_out(v) for every node v
-        HashMap<String,EppsteinHeap> nodeHeaps = new HashMap<String, EppsteinHeap>(graph.numNodes());
-        HashMap<String,EppsteinHeap> edgeHeaps = new HashMap<String, EppsteinHeap>(graph.numEdges());
+        HashMap<String, EppsteinHeap> nodeHeaps = new HashMap<String, EppsteinHeap>(graph.numNodes());
+        HashMap<String, EppsteinHeap> edgeHeaps = new HashMap<String, EppsteinHeap>(graph.numEdges());
         // Heap H_T(v) for every node v
-        HashMap<String,EppsteinHeap> outrootHeaps = new HashMap<String, EppsteinHeap>();
+        HashMap<String, EppsteinHeap> outrootHeaps = new HashMap<String, EppsteinHeap>();
         HashMap<String, EppsteinArrayHeap> arrayHeaps = new HashMap<String, EppsteinArrayHeap>(graph.numNodes());
 
         // Create a virtual/dummy heap that is the root of the overall Eppstein heap. It represents the best path from
@@ -125,58 +185,5 @@ public final class LazyEppstein extends Eppstein implements KSPAlgorithm {
         }
 
         return ksp;
-    }
-
-    /**
-     * Build H_out(v) and H_T(v) for node v, and recursively build H_T(nextT(v)) if it does not exist.
-     *
-     * @param nodeLabel             node v
-     * @param graph                 the graph, G, on which to compute the K shortest paths from s to t
-     * @param sidetrackEdgeCostMap  the cost of each sidetrack edge in G
-     * @param nodeHeaps             an index/hash table of heap H_out(v), for each node v in the graph
-     * @param edgeHeaps             an index/hash table of heaps H_out(v), but indexed by sidetrack edge
-     * @param outrootHeaps          an index of heaps H_T(v) for each node v
-     * @param arrayHeaps            an index of the array representation of heaps H_T(v) for each node v, as they are
-     *                              being built
-     * @param tree                  the shortest path tree, T, rooted at the target node, t
-     */
-    private static void buildHeap(String nodeLabel, Graph graph, HashMap<String, Double> sidetrackEdgeCostMap, HashMap<String, EppsteinHeap> nodeHeaps, HashMap<String, EppsteinHeap> edgeHeaps, HashMap<String, EppsteinHeap> outrootHeaps, HashMap<String, EppsteinArrayHeap> arrayHeaps, ShortestPathTree tree) {
-        /* Part 1: Compute sub-heap H_out(v). */
-        computeOutHeap(nodeLabel, graph, sidetrackEdgeCostMap, nodeHeaps, edgeHeaps);
-
-        /* PART 2: Compute sub-heap H_T(v) */
-
-        /* Need to get H_T(nextT(v)) before H_T(v) can be built. If H_T(nextT(v)) has not been built, build it. */
-        EppsteinArrayHeap currentArrayHeap;
-        if (nodeLabel.equals(tree.getRoot())) {
-            // Case 0 (recursive base case): v = the target node, t, so there is no H_T(nextT(v))
-            currentArrayHeap = new EppsteinArrayHeap();
-        }
-        else {
-            if (!outrootHeaps.containsKey(tree.getParentOf(nodeLabel))) {
-                // Case 1: H_T(nextT(v)) has not been built, so build it
-                buildHeap(tree.getParentOf(nodeLabel), graph, sidetrackEdgeCostMap, nodeHeaps, edgeHeaps, outrootHeaps, arrayHeaps, tree);
-            }
-            // Case 2: H_T(nextT(v)) has been built
-            currentArrayHeap = arrayHeaps.get(tree.getParentOf(nodeLabel));
-        }
-
-        /* Create H_T(v) from H_T(nextT(v) */
-        EppsteinHeap sidetrackHeap = nodeHeaps.get(nodeLabel);
-        if (sidetrackHeap != null) {
-            currentArrayHeap = currentArrayHeap.clone();
-            currentArrayHeap.addOutroot(sidetrackHeap);
-        }
-
-        // Index the array representation of H_T(v), which is in a modifiable form and is used only by buildHeap() to
-        // create further H_T heaps for which the current heap is a dependency.
-        arrayHeaps.put(nodeLabel,currentArrayHeap);
-
-        // Index the static, pointer representation of H_T(v), which is traversed by Eppstein's algorithm to add
-        // candidate paths to the priority queue.
-        EppsteinHeap currentHeap = currentArrayHeap.toEppsteinHeap2();
-        if (currentHeap != null) {
-            outrootHeaps.put(nodeLabel, currentHeap);
-        }
     }
 }
