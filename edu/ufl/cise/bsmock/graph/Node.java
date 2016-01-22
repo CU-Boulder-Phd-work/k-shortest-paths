@@ -3,7 +3,7 @@ package edu.ufl.cise.bsmock.graph;
 /**
  * The Node class implements a node in a directed graph keyed on a label of type String, with adjacency lists for
  * representing edges.
- *
+ * <p/>
  * Created by brandonsmock on 5/31/15.
  */
 
@@ -14,7 +14,7 @@ import java.util.Set;
 
 public class Node {
     protected String label;
-    protected HashMap<String,Double> neighbors; // adjacency list, with HashMap for each edge weight
+    protected HashMap<String, Double> neighbors; // adjacency list, with HashMap for each edge weight
 
     public Node() {
         neighbors = new HashMap();
@@ -41,7 +41,7 @@ public class Node {
         this.neighbors = neighbors;
     }
 
-    public void addEdge(String toNodeLabel,Double weight) {
+    public void addEdge(String toNodeLabel, Double weight) {
         neighbors.put(toNodeLabel, weight);
     }
 
@@ -62,12 +62,12 @@ public class Node {
     public LinkedList<Edge> getEdges() {
         LinkedList<Edge> edges = new LinkedList<Edge>();
         for (String toNodeLabel : neighbors.keySet()) {
-            edges.add(new Edge(label,toNodeLabel,neighbors.get(toNodeLabel)));
+            edges.add(new Edge(label, toNodeLabel, neighbors.get(toNodeLabel)));
         }
 
         return edges;
     }
-    
+
     public String toString() {
         StringBuilder nodeStringB = new StringBuilder();
         nodeStringB.append(label);

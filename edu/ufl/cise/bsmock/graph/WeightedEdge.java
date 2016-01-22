@@ -2,7 +2,7 @@ package edu.ufl.cise.bsmock.graph;
 
 /**
  * The WeightedEdge class implements standard properties and methods for a weighted edge in a directed graph.
- *
+ * <p/>
  * Created by Brandon Smock on 6/6/15.
  */
 public class WeightedEdge implements Comparable<WeightedEdge> {
